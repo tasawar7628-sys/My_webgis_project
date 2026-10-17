@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Rawalpindi WebGIS Navigation Dashboard</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+  <style>
+    body { margin:0; font-family: Arial, sans-serif; display:flex; flex-direction:column; height:100vh; }
+    header { background:#d32f2f; color:white; text-align:center; padding:12px; font-size:22px; font-weight:bold; }
+    #main { display:flex; flex:1; }
+    #left { width:230px; background:#f4f4f4; padding:15px; border-right:1px solid #ddd; }
+    #right { width:220px; background:#f4f4f4; padding:15px; border-left:1px solid #ddd; }
+    #map { flex:1; }
+   .loc-btn { display:block; width:100%; margin:10px 0; padding:12px; background:#1976d2; color:white; border:none; cursor:pointer; border-radius:6px; font-size:14px; }
+   .loc-btn:hover { background:#0d47a1; }
+    #info { margin-top:15px; background:white; padding:10px; border-radius:6px; font-size:14px; }
+  </style>
+</head>
+<body>
+<header>Interactive WebGIS Navigation Dashboard - Rawalpindi</header>
+<div id="main">
+  <div id="left">
+    <h3>Locations</h3>
+    <button class="loc-btn" onclick="goToLocation(0)">The City School - Rawalpindi</button>
+    <button class="loc-btn" onclick="goToLocation(1)">Beaconhouse School System - Rawalpindi</button>
+    <div id="info">Select a location to see route, distance and time.</div>
+  </div>
+  <div id="map"></div>
+  <div id="right">
+    <h3>Student Details</h3>
+    <p><b>Name:</b> Tassawer</p>
+    <p><b>ARID No:</b> 24-ARID-2243</p>
+    <p><b>City:</b> Rawalpindi</p>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+<script>
+  var locations = [
+    { name: "The City School - Rawalpindi Campus", lat: 33.5880, lng: 73.0680 },
+    { name: "Beaconhouse School System - Rawalpindi", lat: 33.6410, lng: 73.0750 }
+  ];
+
+  // Fixed Start Point - Rawalpindi Saddar
+  var startPoint = L.latLng(33.5942, 73.0470);
+
+  var map = L.map('map').setView([33.6137, 73.0737], 12);
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Tiles &copy; Esri'
+  }).addTo(map);
+
+  L.marker(startPoint).addTo(map).bindPopup("Your Current Location - Rawalpindi Saddar").openPopup();
+
+  var routingControl = null;
+
+  function goToLocation(index) {
+    var dest = locations[index];
+    var start = startPoint;
+    var end = L.latLng(dest.lat, dest.lng);
+
+    if (routingControl) map.removeControl(routingControl);
+
+    routingControl = L.Routing.control({
+      waypoints: [start, end],
+      router: L.Routing.osrmv1({ serviceUrl: 'https://router.project-osrm.org/route/v1' }),
+      lineOptions: { styles: [{ color: 'blue', weight: 5 }] }
+    }).addTo(map);
+
+    routingControl.on('routesfound', function(e) {
+      var route = e.routes[0];
+      var distKm = (route.summary.totalDistance / 1000).toFixed(2);
+      var timeMin = (route.summary.totalTime / 60).toFixed(1);
+      document.getElementById('info').innerHTML =
+        "<b>" + dest.name + "</b><br>" +
+        "Distance: " + distKm + " km<br>" +
+        "Time: " + timeMin + " min";
+    });
+  }
+</script>
+</body>
+</html>
